@@ -6,8 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Atmos-Reader</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600&display=swap');
+
         body {
-            background-color: #C0E8FF; /* Vivid Sky Blue background */
+            background: linear-gradient(to right, #e0f7fa, #80deea); /* Subtle gradient background */
             font-family: 'Arial', sans-serif;
             display: flex;
             flex-direction: column;
@@ -18,31 +20,49 @@
         }
 
         h1 {
-            font-size: 36px;
+            font-family: 'Poppins', sans-serif; /* Custom font */
+            font-size: 36px; /* Larger font size */
+            font-weight: 600; /* Bold font weight */
             margin-bottom: 20px;
-            color: #2A2A2A; /* Dark Slate Gray for text */
+            color: #ffffff; /* White text color */
+            background: linear-gradient(45deg, #FF6B6B, #FFD93D, #4CAF50); /* Gradient background */
+            background-clip: text; /* Use gradient as text color */
+            -webkit-background-clip: text; /* Safari/Chrome compatibility */
+            -webkit-text-fill-color: transparent; /* Make the gradient visible in text */
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2); /* Subtle shadow for depth */
+            padding: 10px 20px; /* Padding around the text */
+            border-radius: 10px; /* Rounded corners */
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); /* Add a soft shadow */
+            letter-spacing: 1.5px; /* Spacing between letters */
+            display: inline-block; /* Ensure the heading is inline and centered */
         }
 
         .container {
             display: flex;
-            justify-content: space-around;
+            justify-content: center; /* Center the tiles */
+            align-items: center;
             width: 100%;
             max-width: 800px;
+            flex-wrap: wrap; /* Allow wrapping on smaller screens */
+            margin-bottom: 20px;
         }
 
         .tile {
-            width: 200px;
-            height: 200px;
-            margin: 20px;
-            display: inline-block;
+            width: 150px;
+            height: 150px;
+            margin: 10px;
             text-align: center;
-            line-height: 200px;
-            font-size: 24px;
+            line-height: 1.4; /* Adjust line height */
+            font-size: 18px; /* Reduce font size */
             color: white;
             transition: transform 0.3s ease;
             cursor: pointer;
-            border-radius: 15px; /* Smooth curved edges */
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Stronger shadow for tiles */
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center; /* Center text vertically */
+            padding: 10px; /* Add padding */
         }
 
         .tile:hover {
@@ -50,64 +70,55 @@
         }
 
         .temperature {
-            background-color: #FF4C4C; /* Vivid Coral Red for temperature */
+            background-color: #FF4C4C;
         }
 
         .humidity {
-            background-color: #4CAF50; /* Bright Green for humidity */
+            background-color: #4CAF50;
         }
 
         .timestamp {
-            font-size: 18px;
+            font-size: 16px;
             margin-top: 20px;
-            color: #4A4A4A; /* Dark Gray for timestamp */
+            color: #4A4A4A;
         }
 
         .graph-container {
             display: flex;
-            justify-content: space-around;
+            justify-content: center; /* Center the graphs */
+            align-items: center;
             width: 100%;
             max-width: 800px;
-            margin-top: 40px;
+            margin-top: 20px;
+            flex-wrap: wrap; /* Allow wrapping on smaller screens */
+            gap: 40px; /* Double the space between the graphs */
         }
 
-        .graph {
-            width: 45%;
-            height: 300px;
-            background-color: #E6E6E6; /* Light Gray for graph background */
+        .line-graph {
+            width: 23%; /* Smaller width */
+            height: auto;
+            max-width: 100%;
+            background-color: #E6E6E6;
             border: 1px solid #ccc;
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-            position: relative;
-            overflow: hidden;
+            transition: transform 0.3s ease; /* Hover effect */
+            cursor: pointer;
+            margin: 10px;
         }
 
-        .bar {
-            position: absolute;
-            bottom: 0;
-            width: 100%;
-            background-color: #FF3333; /* Default color for temperature graph */
+        .line-graph:hover {
+            transform: scale(1.1); /* Zoom on hover */
         }
 
-        #temperature-bar {
-            height: 50%; /* Default value: 50% */
-        }
-
-        #humidity-bar {
-            height: 40%; /* Default value: 40% */
-            background-color: #33D7B0; /* Vivid Teal for humidity graph */
-        }
-
-        .graph-label {
-            position: absolute;
-            bottom: 10px;
-            left: 0;
-            width: 100%;
-            text-align: center;
-            font-size: 18px;
-            color: #2A2A2A; /* Dark Slate Gray for label text */
+        @media (max-width: 768px) {
+            .line-graph {
+                width: 50%; /* Larger width on smaller screens */
+                margin-bottom: 20px;
+            }
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
@@ -127,17 +138,49 @@
     </div>
 
     <div class="graph-container">
-        <div class="graph" id="temperature-graph">
-            <div class="bar" id="temperature-bar"></div>
-            <div class="graph-label" id="temperature-label">50%</div> <!-- Default value -->
-        </div>
-        <div class="graph" id="humidity-graph">
-            <div class="bar" id="humidity-bar"></div>
-            <div class="graph-label" id="humidity-label">40%</div> <!-- Default value -->
-        </div>
+        <canvas id="temperatureLineGraph" class="line-graph"></canvas>
+        <canvas id="humidityLineGraph" class="line-graph"></canvas>
     </div>
 
     <script>
+        const temperatureLineChart = new Chart(document.getElementById('temperatureLineGraph').getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Temperature (°C)',
+                    data: [],
+                    borderColor: '#FF4C4C',
+                    borderWidth: 2,
+                    fill: false,
+                }]
+            },
+            options: {
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+
+        const humidityLineChart = new Chart(document.getElementById('humidityLineGraph').getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Humidity (%)',
+                    data: [],
+                    borderColor: '#4CAF50',
+                    borderWidth: 2,
+                    fill: false,
+                }]
+            },
+            options: {
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+
         function updateData() {
             fetch('/api/records/')
                 .then(response => response.json())
@@ -148,20 +191,18 @@
                         document.getElementById('humidity-tile').innerText = `Humidity: ${latest.humidity} %`;
                         document.getElementById('timestamp').innerText = `Last Updated: ${new Date(latest.timestamp).toLocaleString()}`;
                         
-                        // Update graphs
-                        updateGraph('temperature-bar', latest.temperature, '#FF3333');
-                        updateGraph('humidity-bar', latest.humidity, '#33D7B0');
+                        // Update line graphs
+                        updateLineChart(temperatureLineChart, latest.temperature);
+                        updateLineChart(humidityLineChart, latest.humidity);
                     }
                 });
         }
 
-        function updateGraph(barId, value, color) {
-            const barElement = document.getElementById(barId);
-            const labelElement = barElement.nextElementSibling;
-            const percentage = Math.min(100, Math.max(0, value)); // Ensure value is between 0 and 100
-            barElement.style.height = percentage + '%';
-            barElement.style.backgroundColor = color;
-            labelElement.innerText = percentage + '%';
+        function updateLineChart(chart, newData) {
+            const currentTime = new Date().toLocaleTimeString();
+            chart.data.labels.push(currentTime);
+            chart.data.datasets[0].data.push(newData);
+            chart.update();
         }
 
         setInterval(updateData, 5000); // Update every 5 seconds
